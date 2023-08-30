@@ -1,9 +1,12 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'cn.liguohao.demo'
 version = '1.0-SNAPSHOT'
+
+mainClassName = 'VideoMain'
 
 repositories {
     mavenCentral()
@@ -14,12 +17,12 @@ repositories {
 }
 
 dependencies {
-
     implementation 'org.slf4j:slf4j-api:2.0.7'
     implementation 'ch.qos.logback:logback-classic:1.4.11'
 
 
-    implementation group: 'org.bytedeco', name: 'javacv-platform', version: '1.5.10-SNAPSHOT'
+//    implementation group: 'org.bytedeco', name: 'javacv-platform', version: '1.5.10-SNAPSHOT'
+    implementation 'org.bytedeco:javacv-platform:1.5.9'
 //    implementation 'org.bytedeco:javacv:1.5.9'
 
 
@@ -30,3 +33,9 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+sourceSets {
+    main.java.srcDir "src/main/java"
+    main.resources.srcDir "src/main/resources"
+}
+

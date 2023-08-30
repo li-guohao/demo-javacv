@@ -2,6 +2,7 @@
 import java.io.File;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -26,6 +27,10 @@ public class Video {
 
     public Video (String parent, String fileName) {
         this(new File(parent, fileName));
+    }
+
+    public Video(Path path) {
+        this(path.toFile());
     }
 
     public Video (File file) {
@@ -137,14 +142,32 @@ public class Video {
         }
         FFmpegFrameGrabber frameGrabber = FFmpegFrameGrabber.createDefault(new File(videoFormat.getParent(), videoFormat.getName()));
         frameGrabber.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+        if (SystemUtils.isLinux()) {
+            frameGrabber.setVideoCodecName("hevc_vaapi");
+        } else if (SystemUtils.isWindows()) {
         frameGrabber.setVideoCodecName("hevc_cuvid");
+
+        } else {
+            throw new IllegalArgumentException("Un support os.");
+        }
         Frame captured_frame = null;
         FFmpegFrameRecorder recorder = null;
         try {
             frameGrabber.start();
             recorder = new FFmpegFrameRecorder(outFilePath, frameGrabber.getImageWidth(), frameGrabber.getImageHeight(), frameGrabber.getAudioChannels());
-            recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-            recorder.setVideoCodecName("h264_nvenc");
+            if(SystemUtils.isLinux()) {
+                recorder.setOption("hwaccel", "vaapi");
+                recorder.setOption("hwaccel_device", "/dev/dri/renderD128");
+                recorder.setOption("hwaccel_output_format", "vaapi");
+                recorder.setOption("vf", "scale_vaapi=format=nv12"); // ???
+                //recorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+                recorder.setVideoCodecName("hevc_vaapi");
+            } else if (SystemUtils.isWindows()) {
+                recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+                recorder.setVideoCodecName("h264_nvenc");
+            } else {
+                throw new IllegalArgumentException("Un support os.");
+            }
             recorder.setFormat(DEFAULT_EXTNAME);
             recorder.setFrameRate(frameGrabber.getFrameRate());
             recorder.setVideoBitrate(frameGrabber.getVideoBitrate());
